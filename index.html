@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Demo tracking GDPR</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <!--
+      Basic implementation of tcfapi to answer external requests for user consent
+      Documentation comes from IAB: https://shorturl.at/kHWXY
+    -->
+    <script>
+      // Random consent string copied/pasted from dm-euconsent-v2 cookie
+      const TC_STRING = "CPuvhMAPuvhMABpAGAENDECsAP_AAH_AAAqIJbtV_H__bW9r8f5_aft0eY1P9_r77uQzDhfNk-4F3L_W_LwX52E7NF36tq4KmR4Eu3LBIUNlHNHUTVmwaokVryHsak2cpTNKJ6BEkHMRO2dYGF5umxtjeQKY5_p_d3fx2D-t_dv-39z3z81Xn3dZ_-_0-PCdU5_9Dfn9fRfb-9IL9_78v8v8_9_rk2_eX_3_79_7_H9-f_84JbgEmGrcQBdmUODNoGEUCIEYVhIRQKACCgGFogIAHBwU7KwCfWESAFAKAIwIgQ4AoyIBAAAJAEhEAEgRYIAAARAIAAQAIBEIAGBgEFABYCAQAAgOgYohQACBIQJEREQpgQFQJBAS2VCCUF0hphAFWWAFAIjYKABEEgIrAAEBYOAYIkBKxYIEmINogAGAFAKJUK1FJ6aAhYzIAAAA"
+
+      // ┌─────────────────────────────────────────────────────────────────────────────────────────┐
+      // │                                                                                         │
+      // │ Tracking (1 of 3): page is loaded                                                       │
+      // │                                                                                         │
+      // └─────────────────────────────────────────────────────────────────────────────────────────┘
+      console.log('----- TRACKING N°1: page is loaded (0ms) -----')
+      window.start = window.performance.now()
+
+      // ┌─────────────────────────────────────────────────────────────────────────────────────────┐
+      // │                                                                                         │
+      // │ Tracking (2 of 3): call received from Player iframe                                     │
+      // │                                                                                         │
+      // └─────────────────────────────────────────────────────────────────────────────────────────┘
+      window.addEventListener('message', (event) => {
+        // Filter out external request not for user consent (example: web extensions also use
+        // postMessage mechanism)
+        if (!event.data) return
+        if (!event.data.__tcfapiCall) return
+
+        const { command, callId } = event.data.__tcfapiCall
+
+        if (command === "addEventListener") { // Based on TCF 2.2
+          const ts2 = Math.round(window.performance.now() - window.start)
+          console.log(`----- TRACKING N°2: call received (${ts2}ms) -----`)
+
+          // ┌─────────────────────────────────────────────────────────────────────────────────────┐
+          // │                                                                                     │
+          // │ Tracking (3 of 3): random delay to simulate latency when computing consent string   │
+          // │                                                                                     │
+          // └─────────────────────────────────────────────────────────────────────────────────────┘
+          // Random delay to simulate latency
+          const randomDelay = Math.round(Math.random() * 2000) 
+          setTimeout(() => {
+            const ts3 = Math.round(window.performance.now() - window.start)
+            console.log(`----- TRACKING N°3: answering to Player (${ts3}ms) -----`)
+            event.source.postMessage({
+              __tcfapiReturn: {
+                callId,
+                returnValue: {
+                  tcfPolicyVersion: 2,
+                  tcString: TC_STRING
+                }
+              }
+            }, '*')
+          }, randomDelay)
+        }
+      })
+    </script>
+    <iframe class="hidden" name="__tcfapiLocator"></iframe>
+    <div id="app"></div>
+    <iframe src="https://geo.dailymotion.com/player.html?video=x7xgg57&dmLogger=Infopack"></iframe>
+  </body>
+</html>

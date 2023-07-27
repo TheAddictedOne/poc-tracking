@@ -1,0 +1,14 @@
+body {
+  display: flex;
+  justify-content: center;
+}
+
+iframe {
+  width: 800px;
+  height: 600px;
+  display: block;
+}
+
+.hidden {
+  display: none;
+}
